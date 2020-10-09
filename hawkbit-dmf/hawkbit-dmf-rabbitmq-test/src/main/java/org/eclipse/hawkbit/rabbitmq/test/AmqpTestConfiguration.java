@@ -15,9 +15,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import com.google.common.base.Throwables;
+
 import org.eclipse.hawkbit.HawkbitServerProperties;
 import org.eclipse.hawkbit.api.HostnameResolver;
-import org.eclipse.hawkbit.rabbitmq.test.RabbitMqSetupService.AlivenessException;
 import org.eclipse.hawkbit.repository.jpa.model.helper.SystemSecurityContextHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,8 +35,7 @@ import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.concurrent.ConcurrentTaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.security.concurrent.DelegatingSecurityContextExecutorService;
-
-import com.google.common.base.Throwables;
+import org.springframework.web.client.ResourceAccessException;
 
 /**
  *
@@ -88,14 +88,13 @@ public class AmqpTestConfiguration {
         factory.setPort(5672);
         factory.setUsername(rabbitmqSetupService.getUsername());
         factory.setPassword(rabbitmqSetupService.getPassword());
+
         try {
             factory.setVirtualHost(rabbitmqSetupService.createVirtualHost());
-            // All exception are catched. The BrokerRunning decide if the
-            // test should break or not
-        } catch (@SuppressWarnings("squid:S2221") final Exception e) {
-            Throwables.propagateIfInstanceOf(e, AlivenessException.class);
-            LOG.error("Cannot create virtual host.", e);
+        } catch (final ResourceAccessException ex) {
+            System.err.print("b.");
         }
+
         return factory;
     }
 

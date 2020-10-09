@@ -14,13 +14,13 @@ import java.util.UUID;
 
 import javax.annotation.PreDestroy;
 
-import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
-import org.springframework.util.StringUtils;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Throwables;
 import com.rabbitmq.http.client.Client;
 import com.rabbitmq.http.client.domain.UserPermissions;
+
+import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
+import org.springframework.util.StringUtils;
 
 /**
  * Creates and deletes a new virtual host if the rabbit mq management api is
@@ -74,17 +74,22 @@ public class RabbitMqSetupService {
         return "http://" + getHostname() + ":15672/api/";
     }
 
-    @SuppressWarnings("squid:S1162")
-    public String createVirtualHost() throws JsonProcessingException {
+    public String createVirtualHost() {
         if (!getRabbitmqHttpClient().alivenessTest("/")) {
             throw new AlivenessException(getHostname());
 
         }
-        virtualHost = UUID.randomUUID().toString();
-        getRabbitmqHttpClient().createVhost(virtualHost);
-        getRabbitmqHttpClient().updatePermissions(virtualHost, getUsername(), createUserPermissionsFullAccess());
-        return virtualHost;
 
+        try {
+            virtualHost = UUID.randomUUID().toString();
+            getRabbitmqHttpClient().createVhost(virtualHost);
+            getRabbitmqHttpClient().updatePermissions(virtualHost, getUsername(), createUserPermissionsFullAccess());
+
+            return virtualHost;
+
+        } catch (final JsonProcessingException ex) {
+            throw new IllegalArgumentException(ex);
+        }
     }
 
     @PreDestroy
